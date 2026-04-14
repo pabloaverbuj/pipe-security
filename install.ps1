@@ -10,7 +10,7 @@
 
 .EXAMPLE
     # Instalación con un comando (como Admin):
-    irm https://raw.githubusercontent.com/ActiveDirectory-AuditSec/pipe-security/main/install.ps1 | iex
+    irm https://raw.githubusercontent.com/pabloaverbuj/pipe-security/main/install.ps1 | iex
 
 .NOTES
     Autor: Geo Labs Security
@@ -27,7 +27,7 @@ param(
 $ErrorActionPreference = "Stop"
 $INSTALL_DIR  = "$env:LOCALAPPDATA\pipe-security"
 $PYTHON_MIN   = [Version]"3.10"
-$REPO_URL     = "https://github.com/ActiveDirectory-AuditSec/pipe-security"
+$REPO_URL     = "https://github.com/pabloaverbuj/pipe-security"
 $PACKAGE_NAME = "pipe-security"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

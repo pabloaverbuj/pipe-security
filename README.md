@@ -42,7 +42,7 @@ Todo sin salir de Claude Desktop. Todo gratis.
 Abrí **PowerShell como Administrador** y ejecutá:
 
 ```powershell
-irm https://raw.githubusercontent.com/ActiveDirectory-AuditSec/pipe-security/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/pabloaverbuj/pipe-security/main/install.ps1 | iex
 ```
 
 Esto:
@@ -59,7 +59,7 @@ Esto:
 
 ```powershell
 # Descargar y ejecutar en el DC
-irm https://raw.githubusercontent.com/ActiveDirectory-AuditSec/pipe-security/main/setup-ad-auditor.ps1 | iex
+irm https://raw.githubusercontent.com/pabloaverbuj/pipe-security/main/setup-ad-auditor.ps1 | iex
 ```
 
 Esto crea el usuario `auditoria.mcp` con:
@@ -185,7 +185,7 @@ Windows Server 2008 R2 o superior (nivel funcional ≥ 4).
 ## Desinstalar
 
 ```powershell
-irm https://raw.githubusercontent.com/ActiveDirectory-AuditSec/pipe-security/main/install.ps1 | iex -Uninstall
+irm https://raw.githubusercontent.com/pabloaverbuj/pipe-security/main/install.ps1 | iex -Uninstall
 ```
 
 O manualmente:

@@ -10,7 +10,7 @@ authors = [{name = "ActiveDirectory-AuditSec"}]
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-homepage = "https://github.com/ActiveDirectory-AuditSec/pipe-security"
+homepage = "https://github.com/pabloaverbuj/pipe-security"
 keywords = ["security", "audit", "active-directory", "windows", "mcp", "claude"]
 dependencies = [
     "mcp>=1.0.0",
