@@ -1,43 +1,52 @@
-# pipe-security — AD Security Auditor para Claude Desktop
+<div align="center">
 
-Herramienta **gratuita** de auditoría de Active Directory que corre directamente en Claude Desktop.  
-Sin suscripciones, sin APIs de pago, sin enviar datos a terceros.
+# 🔐 pipe-security
+
+**Auditoría de Active Directory directamente desde Claude Desktop**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
+[![MCP](https://img.shields.io/badge/Claude-MCP%20Server-D97706?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io)
+[![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK-red)](https://attack.mitre.org)
+[![Gratis](https://img.shields.io/badge/Precio-100%25%20Gratis-brightgreen)]()
+
+*Sin suscripciones · Sin APIs de pago · Sin datos a terceros · Código abierto*
+
+</div>
 
 ---
 
 ## ¿Qué hace?
 
-Desde una conversación con Claude podés pedirle:
+Convierte a Claude en un auditor de Active Directory. Desde el chat podés pedir assessments completos, detectar vectores de ataque y obtener remediaciones concretas — sin instalar herramientas adicionales, sin consolas de administración.
 
-- Assessment completo de seguridad AD con **score A-F y técnicas MITRE ATT&CK**
-- Análisis de **Kerberoasting, AS-REP Roasting, delegación irrestricta**
-- Política de contraseñas y **riesgo de password spray**
-- **Domain Admins, Enterprise Admins, Backup Operators** — quién tiene qué
-- Cuentas inactivas, service accounts sobreaprovisionadas
-- GPOs y detección de hardening
-- **Readiness anti-ransomware** con kill chain stages
-- Auditoría del equipo local (SMB, RDP, Defender, LAPS)
-
-Todo sin salir de Claude Desktop. Todo gratis.
+```
+"hacé un assessment completo de seguridad del dominio"
+"¿hay cuentas Kerberoasteables con privilegios elevados?"
+"analizá el riesgo de ransomware y dame las GPOs de mitigación"
+"listá todos los Domain Admins inactivos hace más de 90 días"
+```
 
 ---
 
-## Requisitos
+## 🛡️ Qué detecta
 
-| Requisito | Costo | Link |
-|---|---|---|
-| Claude Desktop | Gratis | [claude.ai/download](https://claude.ai/download) |
-| Python 3.10+ | Gratis | Se instala automáticamente |
-| Acceso a la red del dominio | — | VPN o red local |
-| Cuenta AD de solo lectura | — | Script incluido |
+| Categoría | Checks |
+|---|---|
+| **Identidades** | Cuentas inactivas, admins sin uso, AS-REP Roastable |
+| **Kerberos** | Kerberoastable (T1558.003), AS-REP (T1558.004), delegación irrestricta |
+| **Privilegios** | Domain Admins, Enterprise Admins, Backup Operators |
+| **Contraseñas** | Longitud mínima, complejidad, lockout, historial, password spray |
+| **GPOs** | Cantidad, hardening detectado, SMB Signing, LSASS PPL |
+| **Endpoints** | Windows legado (XP/2003/2008), delegación irrestricta por equipo |
+| **Ransomware** | Kill chain completo: Initial Access → Credential Theft → Impact |
+| **Local** | SMBv1, WDigest, RDP, Defender, LAPS, firewall |
 
-> El plan **gratuito de Claude** (~20-50 mensajes/día) es suficiente para un assessment completo.
+Cada hallazgo incluye **técnica MITRE ATT&CK**, **severidad** y **remediación paso a paso**.
 
 ---
 
-## Instalación — 2 pasos
-
-### Paso 1: Instalar el MCP (en el equipo del auditor)
+## ⚡ Instalación — 1 comando
 
 Abrí **PowerShell como Administrador** y ejecutá:
 
@@ -45,42 +54,25 @@ Abrí **PowerShell como Administrador** y ejecutá:
 irm https://raw.githubusercontent.com/pabloaverbuj/pipe-security/main/install.ps1 | iex
 ```
 
-Esto:
-- Instala Python si no está presente
-- Crea un entorno virtual aislado
-- Instala pipe-security y sus dependencias
-- Configura Claude Desktop automáticamente
+El script hace todo automáticamente:
 
-**Reiniciá Claude Desktop** cuando termine.
+- ✅ Instala Python 3.11 si no está presente
+- ✅ Crea un entorno virtual aislado
+- ✅ Instala pipe-security y dependencias
+- ✅ Configura Claude Desktop
+- ✅ Detecta el dominio AD automáticamente
+- ✅ Crea la cuenta auditora `auditoria.mcp` (pide credenciales de Domain Admin via popup)
+- ✅ Registra el dominio en pipe-security listo para usar
 
----
+**Reiniciá Claude Desktop** — listo para auditar.
 
-### Paso 2: Crear cuenta de auditoría en AD (en un DC, como Domain Admin)
-
-```powershell
-# Descargar y ejecutar en el DC
-irm https://raw.githubusercontent.com/pabloaverbuj/pipe-security/main/setup-ad-auditor.ps1 | iex
-```
-
-Esto crea el usuario `auditoria.mcp` con:
-- Solo lectura en el dominio (usa los permisos de Domain Users)
-- Contraseña segura generada automáticamente
-- Sin posibilidad de modificar objetos AD
-
-El script te muestra el usuario y contraseña para usar en el siguiente paso.
+> **Sin acceso a un dominio AD todavía?** El script instala igual y podés agregar el dominio después desde Claude.
 
 ---
 
-## Primer uso
+## 💬 Primeros pasos
 
-Una vez instalado y con Claude Desktop reiniciado, abrí Claude y decí:
-
-```
-"agregá el dominio MIEMPRESA con DC 192.168.1.10, fqdn miempresa.local,
- usuario auditoria.mcp, password LaPasswordDelScript"
-```
-
-Luego pedí el assessment:
+Una vez instalado, abrí Claude Desktop y probá:
 
 ```
 "hacé un ad_security_assessment_full"
@@ -90,37 +82,41 @@ Luego pedí el assessment:
 "hacé un ad_ransomware_readiness"
 ```
 
+```
+"mostrá los grupos privilegiados del dominio"
+```
+
 ---
 
-## Herramientas disponibles
+## 🛠️ Herramientas disponibles
 
 ### Gestión de dominios
 | Tool | Descripción |
 |---|---|
-| `domain_add` | Registrar un dominio (IP DC + credenciales) |
+| `domain_add` | Registrar dominio (IP DC + credenciales) |
 | `domain_remove` | Eliminar un dominio registrado |
-| `domain_list` | Ver dominios configurados |
+| `domain_list` | Ver dominios configurados y activo |
 | `domain_switch` | Cambiar dominio activo |
 
-### Assessment AD
+### Assessment completo
 | Tool | Descripción |
 |---|---|
-| `ad_security_assessment_full` | Assessment completo — score 0-100, grade A-F, MITRE |
-| `ad_ransomware_readiness` | Kill chain anti-ransomware, GPO fixes |
+| `ad_security_assessment_full` | Score 0-100, grade A-F, 6 dominios con MITRE |
+| `ad_ransomware_readiness` | Kill chain completo + GPO fixes prioritizados |
 | `ad_security_summary` | Resumen ejecutivo rápido |
-| `ad_security_findings` | Hallazgos con remediación paso a paso |
+| `ad_security_findings` | Hallazgos con remediación detallada |
 
 ### Auditoría granular
 | Tool | Descripción |
 |---|---|
-| `ad_domain_overview` | Info general: DCs, nivel funcional, objetos |
-| `ad_users_overview` | Usuarios: habilitados, sin expiración, AS-REP |
+| `ad_domain_overview` | DCs, nivel funcional, cantidad de objetos |
+| `ad_users_overview` | Habilitados, sin expiración, AS-REP roastable |
 | `ad_privileged_groups` | Domain Admins, Enterprise Admins, Backup Operators |
 | `ad_password_policy` | Longitud, complejidad, lockout, historial |
 | `ad_kerberoastable` | Service accounts con SPN vulnerables |
-| `ad_asrep_roastable` | Usuarios sin pre-autenticación Kerberos |
-| `ad_stale_accounts` | Cuentas inactivas en N días |
-| `ad_computers` | Equipos: OS legacy, delegación irrestricta |
+| `ad_asrep_roastable` | Cuentas sin pre-autenticación Kerberos |
+| `ad_stale_accounts` | Cuentas inactivas por N días |
+| `ad_computers` | OS legacy, delegación irrestricta |
 | `ad_gpo_list` | Group Policy Objects del dominio |
 | `ad_unconstrained_delegation` | Delegación Kerberos irrestricta |
 
@@ -128,7 +124,7 @@ Luego pedí el assessment:
 | Tool | Descripción |
 |---|---|
 | `local_security_summary` | Resumen de seguridad del equipo |
-| `local_security_findings` | Hallazgos locales con remediación PS |
+| `local_security_findings` | Hallazgos con remediación PowerShell |
 | `local_smb_config` | SMBv1, SMB signing, shares Everyone |
 | `local_wdigest_check` | WDigest, LSA Protection, Credential Guard |
 | `local_rdp_config` | RDP habilitado, NLA, puerto |
@@ -138,14 +134,13 @@ Luego pedí el assessment:
 
 ---
 
-## Multidominio
+## 🏢 Multidominio
 
-Podés auditar múltiples clientes/dominios desde la misma instalación:
+Auditá múltiples clientes desde la misma instalación:
 
 ```
 "agregá el dominio CLIENTE-A con DC 10.0.1.5, fqdn clientea.local, usuario auditor, password ..."
-"agregá el dominio CLIENTE-B con DC 192.168.50.10, fqdn clienteb.com, usuario pipe.audit, password ..."
-"cambiá al dominio CLIENTE-A"
+"cambiá al dominio CLIENTE-B"
 "hacé el assessment"
 ```
 
@@ -153,51 +148,52 @@ Las credenciales se guardan en **Windows Credential Manager** — nunca en disco
 
 ---
 
-## Seguridad y privacidad
+## 📋 Requisitos
 
-- **Las credenciales** se guardan en Windows Credential Manager (mismo lugar que usa Chrome/Edge)
-- **Todas las consultas son de solo lectura** — LDAP Read-Only, no modifica nada en AD
-- **Sin telemetría** — el MCP no envía datos a ningún servidor externo
-- **Los datos van de tu red a Claude** (Anthropic) — igual que cualquier conversación de Claude Desktop
-- **Código abierto** — podés auditar todo el código en este repositorio
+| Requisito | Detalle |
+|---|---|
+| Claude Desktop | [claude.ai/download](https://claude.ai/download) — plan gratuito suficiente |
+| Python 3.10+ | Se instala automáticamente si no está |
+| Acceso LDAP (puerto 389) | VPN o red local al DC |
+| Windows 10/11 | El MCP corre en el equipo del auditor |
 
 ---
 
-## Preguntas frecuentes
+## 🔒 Seguridad y privacidad
 
-**¿Necesito ser Domain Admin para instalar el MCP?**  
-No. Solo necesitás una cuenta de dominio con permisos de lectura (Domain Users es suficiente).
+- **Solo lectura** — LDAP read-only, no modifica nada en AD
+- **Credenciales en Credential Manager** — mismo almacén que Chrome/Edge/Windows
+- **Sin telemetría** — no envía datos a ningún servidor externo
+- **Código abierto** — auditá todo en este repositorio
 
-**¿El script setup-ad-auditor.ps1 requiere permisos elevados?**  
-Sí, necesita correr como Domain Admin para crear el usuario. Solo hay que correrlo una vez.
+---
 
-**¿Funciona con dominios en la nube (Azure AD / Entra ID)?**  
-No — este MCP audita AD on-premises via LDAP. Para Azure AD/M365 usá el MCP `m365-security`.
+## ❓ FAQ
 
-**¿Puedo correrlo desde una VPN?**  
-Sí, siempre que el puerto 389 (LDAP) sea accesible al DC desde tu equipo.
+**¿Necesito ser Domain Admin para usar el MCP?**
+No. La cuenta auditora usa permisos de Domain Users (solo lectura). El script de instalación pide credenciales de DA solo para crear esa cuenta — una vez.
 
-**¿Qué versiones de AD soporta?**  
+**¿Funciona con Azure AD / Entra ID?**
+No — este MCP audita AD on-premises via LDAP. Para Microsoft 365 usá [`m365-security`](https://github.com/pabloaverbuj/m365-security-mcp).
+
+**¿Funciona por VPN?**
+Sí, siempre que el puerto 389 (LDAP) sea accesible al DC.
+
+**¿Qué versiones de AD soporta?**
 Windows Server 2008 R2 o superior (nivel funcional ≥ 4).
 
 ---
 
-## Desinstalar
+## 🗑️ Desinstalar
 
 ```powershell
 irm https://raw.githubusercontent.com/pabloaverbuj/pipe-security/main/install.ps1 | iex -Uninstall
 ```
 
-O manualmente:
-1. Borrar la entrada `pipe-security` de `%APPDATA%\Claude\claude_desktop_config.json`
-2. Borrar `%LOCALAPPDATA%\pipe-security\`
-
 ---
 
-## Licencia
+<div align="center">
 
-MIT — uso libre incluyendo uso comercial (consultorías, assessments para clientes).
+MIT License — uso libre incluyendo comercial (consultorías, assessments para clientes)
 
----
-
-*Desarrollado por Geo Labs Security*
+</div>
