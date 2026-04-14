@@ -143,50 +143,81 @@ function Get-DomainInfo {
     }
 }
 
-# ── Crear cuenta auditora via ADSI (sin RSAT) ─────────────────────────────────
+# ── Crear cuenta auditora con credenciales de Domain Admin ───────────────────
 
-function New-AuditAccount($domain, $password) {
-    $dn = $domain.dn
+function New-AuditAccount($domain, $auditPassword) {
+    $dn   = $domain.dn
     $fqdn = $domain.fqdn
 
-    try {
-        $container = [ADSI]"LDAP://CN=Users,$dn"
+    # Pedir credenciales de Domain Admin via popup nativo de Windows
+    Write-Host ""
+    Write-Host "  Se necesitan credenciales de Domain Admin para crear la cuenta auditora." -ForegroundColor Yellow
+    Write-Host "  (La cuenta auditora solo tendra permisos de lectura)" -ForegroundColor DarkGray
+    Write-Host ""
 
-        # Verificar si ya existe
-        $existing = $null
+    try {
+        $cred = Get-Credential -Message "Ingresa credenciales de Domain Admin para $fqdn" `
+                               -UserName "$($domain.netbios)\Administrador"
+    } catch {
+        Write-Warn "Credenciales canceladas -- saltando creacion de cuenta"
+        return $false
+    }
+
+    if (-not $cred) {
+        Write-Warn "Credenciales canceladas -- saltando creacion de cuenta"
+        return $false
+    }
+
+    $daUser = $cred.UserName
+    $daPass = $cred.GetNetworkCredential().Password
+    $ldapPath = "LDAP://CN=Users,$dn"
+
+    try {
+        $container = New-Object System.DirectoryServices.DirectoryEntry($ldapPath, $daUser, $daPass)
+
+        # Verificar que la conexion funciono
+        if (-not $container.Name) {
+            Write-Warn "No se pudo conectar al AD -- verificar credenciales o conectividad al DC"
+            return $false
+        }
+
+        # Verificar si el usuario ya existe
+        $existingPath = "LDAP://CN=$AUDIT_USER,CN=Users,$dn"
         try {
-            $existing = [ADSI]"LDAP://CN=$AUDIT_USER,CN=Users,$dn"
+            $existing = New-Object System.DirectoryServices.DirectoryEntry($existingPath, $daUser, $daPass)
             if ($existing.sAMAccountName) {
                 Write-Warn "Usuario '$AUDIT_USER' ya existe -- actualizando contrasena..."
-                $existing.SetPassword($password)
-                $existing.SetInfo()
+                $existing.Invoke("SetPassword", $auditPassword)
+                $existing.CommitChanges()
                 Write-Ok "Contrasena actualizada"
                 return $true
             }
         } catch {}
 
         # Crear usuario
-        $user = $container.Create("user", "CN=$AUDIT_USER")
-        $user.Put("sAMAccountName", $AUDIT_USER)
-        $user.Put("userPrincipalName", "$AUDIT_USER@$fqdn")
-        $user.Put("description", "Cuenta auditoria pipe-security MCP -- solo lectura -- NO BORRAR")
-        $user.SetInfo()
+        $user = $container.Children.Add("CN=$AUDIT_USER", "user")
+        $user.Properties["sAMAccountName"].Value = $AUDIT_USER
+        $user.Properties["userPrincipalName"].Value = "$AUDIT_USER@$fqdn"
+        $user.Properties["description"].Value = "Cuenta auditoria pipe-security MCP -- solo lectura -- NO BORRAR"
+        $user.CommitChanges()
 
-        # Establecer contrasena y habilitar cuenta
-        $user.SetPassword($password)
+        # Establecer contrasena y habilitar
+        $user.Invoke("SetPassword", $auditPassword)
         # 66048 = 512 (normal account) + 65536 (password never expires)
-        $user.Put("userAccountControl", 66048)
-        $user.SetInfo()
+        $user.Properties["userAccountControl"].Value = 66048
+        $user.CommitChanges()
 
         Write-Ok "Usuario '$AUDIT_USER' creado en AD"
         return $true
 
     } catch {
         $msg = $_.Exception.Message
-        if ($msg -match "Access is denied|0x80070005") {
-            Write-Warn "Sin permisos de Domain Admin -- la cuenta no se pudo crear automaticamente"
+        if ($msg -match "Access is denied|0x80070005|Logon failure") {
+            Write-Warn "Credenciales incorrectas o sin permisos de Domain Admin"
+        } elseif ($msg -match "already exists|00002071") {
+            Write-Warn "El usuario ya existe -- intenta correr el script de nuevo"
         } else {
-            Write-Warn "Error al crear cuenta: $msg"
+            Write-Warn "Error: $msg"
         }
         return $false
     }
@@ -354,15 +385,10 @@ function Install-PipeSecurity {
                 Write-Warn "No se pudo registrar el dominio automaticamente"
             }
         } else {
-            # No es Domain Admin -- mostrar instrucciones para hacerlo manualmente
             Write-Host ""
-            Write-Host "  Para crear la cuenta auditora, ejecuta esto en el DC (RDP como Domain Admin):" -ForegroundColor Yellow
-            Write-Host ""
-            Write-Host "  irm https://raw.githubusercontent.com/pabloaverbuj/pipe-security/main/setup-ad-auditor.ps1 | iex" -ForegroundColor White
-            Write-Host ""
-            Write-Host "  Luego agrega el dominio desde Claude Desktop:" -ForegroundColor Yellow
+            Write-Host "  La cuenta auditora no se creo -- agrega el dominio manualmente desde Claude:" -ForegroundColor Yellow
             Write-Host "  `"agrega el dominio $($domain.netbios) con DC $($domain.dcIP), fqdn $($domain.fqdn)," -ForegroundColor DarkGray
-            Write-Host "   usuario $AUDIT_USER, password [password del script]`"" -ForegroundColor DarkGray
+            Write-Host "   usuario [tu-usuario-ad], password [tu-password]`"" -ForegroundColor DarkGray
         }
     }
 
