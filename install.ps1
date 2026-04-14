@@ -49,9 +49,11 @@ function Show-Banner {
 
 function Get-PythonExe {
     # Busca Python 3.10+ instalado en el sistema
+    $pyCmd  = Get-Command python  -ErrorAction SilentlyContinue
+    $py3Cmd = Get-Command python3 -ErrorAction SilentlyContinue
     $candidates = @(
-        (Get-Command python -ErrorAction SilentlyContinue)?.Source,
-        (Get-Command python3 -ErrorAction SilentlyContinue)?.Source,
+        $(if ($pyCmd)  { $pyCmd.Source  }),
+        $(if ($py3Cmd) { $py3Cmd.Source }),
         "$env:LOCALAPPDATA\Programs\Python\Python311\python.exe",
         "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
         "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
