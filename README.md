@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔐 pipe-security
+# 🔐 Active Directory-security-Auditor
 
 **Auditoría de Active Directory directamente desde Claude Desktop**
 
